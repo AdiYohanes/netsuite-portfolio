@@ -15,17 +15,18 @@
  */
 global.define = (dependencies, callback) => {
   const resolved = dependencies.map((dep) => {
-    switch (dep) {
-      case "N/log":
-        return require("./mocks/N/log.js");
-      case "N/ui/dialog":
-        return require("./mocks/N/ui.js").dialog;
-      // Extend this switch as you add more mocks:
-      // case "N/record":   return require("./mocks/N/record.js");
-      // case "N/search":   return require("./mocks/N/search.js");
-      // case "N/runtime":  return require("./mocks/N/runtime.js");
-      default:
-        return {};
+    // N/ui/dialog needs special handling: the mock exports { dialog: { alert } }
+    // but SuiteScript receives just the dialog object (with .alert, .confirm, etc.)
+    if (dep === "N/ui/dialog") {
+      return require("N/ui/dialog").dialog;
+    }
+
+    // All other deps (N/* modules and relative paths like ../modules/SomeDAO)
+    // are resolved through Jest's require() so moduleNameMapper applies.
+    try {
+      return require(dep);
+    } catch (e) {
+      return {};
     }
   });
 
