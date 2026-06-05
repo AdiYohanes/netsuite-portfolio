@@ -8,7 +8,7 @@
 [![Jest](https://img.shields.io/badge/Jest-^30.x-C21325?style=for-the-badge&logo=jest&logoColor=white)](https://jestjs.io/)
 [![Node.js](https://img.shields.io/badge/Node.js-≥18.x-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-F7DF1E?style=for-the-badge)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-15_Passing_✅-brightgreen?style=for-the-badge)]()
+[![Tests](https://img.shields.io/badge/Tests-32_Passing_✅-brightgreen?style=for-the-badge)]()
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen?style=for-the-badge)]()
 
 <br/>
@@ -31,7 +31,7 @@ Repository ini adalah portofolio aktif saya — setiap project dirancang untuk m
 
 | #   | Project                                                        | Script Types                                       | Status         | Tests                    |
 | --- | -------------------------------------------------------------- | -------------------------------------------------- | -------------- | ------------------------ |
-| 1   | [Expense Approval System](./projects/expense-approval-system/) | Client Script · User Event · Suitelet · Map/Reduce | 🔄 In Progress | ✅ 15 passing · 100% cov |
+| 1   | [Expense Approval System](./projects/expense-approval-system/) | Client Script · User Event · Suitelet · Map/Reduce | 🔄 In Progress | ✅ 32 passing · 100% cov |
 | 2   | _(coming soon)_                                                | —                                                  | ⬜ Planned     | —                        |
 
 ### Project Status Legend
@@ -57,14 +57,28 @@ NetSuite-Portfolio-ExpenseSystem/
 ├── mocks/                          ← NetSuite module mocks (shared across all projects)
 │   └── N/
 │       ├── log.js                  ← Mock for N/log
-│       └── ui.js                   ← Mock for N/ui/dialog
+│       ├── ui.js                   ← Mock for N/ui/dialog
+│       ├── record.js               ← Mock for N/record
+│       ├── email.js                ← Mock for N/email
+│       ├── search.js               ← Mock for N/search
+│       └── runtime.js              ← Mock for N/runtime
 │
 └── projects/                       ← Per-project source code
     └── expense-approval-system/    ← Project 1
         ├── README.md               ← Project-specific documentation
         ├── src/
-        │   └── scripts/            ← SuiteScript source files
+        │   ├── scripts/            ← SuiteScript entry point files
+        │   │   ├── validate_expenses_cs.js   ← Phase 1: Client Script
+        │   │   └── approve_expenses_ue.js    ← Phase 2: User Event
+        │   └── modules/
+        │       └── expenseApprovalDAO.js     ← Phase 2: Shared DAO
         ├── tests/                  ← Jest unit tests (mirrors src/)
+        │   ├── validate_expenses_cs.test.js
+        │   ├── approve_expenses_ue.test.js
+        │   └── expenseApprovalDAO.test.js
+        ├── mocks/                  ← Project-local mocks (re-export root mocks)
+        │   ├── ExpenseApprovalDAO.js         ← jest.fn() stubs for DAO
+        │   └── N/
         └── docs/
             └── screenshots/        ← Visual documentation
 ```
@@ -100,6 +114,35 @@ npm test
 Expected output:
 
 ```
+PASS  projects/expense-approval-system/tests/expenseApprovalDAO.test.js
+  ExpenseApprovalDAO
+    sendApprovalNotification
+      ✓ should send email to manager when all data is valid
+      ✓ should log warning when employee has no supervisor
+      ✓ should log warning when manager has no email
+      ✓ should catch and log error without throwing
+    processApproval
+      ✓ should update expense status to APPROVED
+      ✓ should update expense status to REJECTED
+      ✓ should throw error if record load fails
+    autoRejectExpense
+      ✓ should set status to REJECTED_AUTO
+    getPendingExpenses
+      ✓ should return array of pending expenses
+      ✓ should return empty array on error
+
+PASS  projects/expense-approval-system/tests/approve_expenses_ue.test.js
+  approve_expenses_ue
+    beforeSubmit
+      ✓ should set status to PENDING_APPROVAL on CREATE
+      ✓ should set submission date on CREATE
+      ✓ should NOT run on EDIT
+      ✓ should catch and log errors without throwing
+    afterSubmit
+      ✓ should send notification on CREATE
+      ✓ should NOT send notification on EDIT
+      ✓ should catch and log errors without throwing
+
 PASS  projects/expense-approval-system/tests/validate_expenses_cs.test.js
   validate_expenses_cs — saveRecord()
     when amount is negative
@@ -123,8 +166,9 @@ PASS  projects/expense-approval-system/tests/validate_expenses_cs.test.js
       ✓ logs the error via N/log.error
       ✓ does NOT show a dialog alert on system error
 
-Tests: 15 passed, 15 total
-Coverage: 100%
+Test Suites: 3 passed, 3 total
+Tests:       32 passed, 32 total
+Coverage:    100%
 ```
 
 ---
@@ -161,9 +205,11 @@ npm run test:ci
 - **AMD `define()` pattern** — matches NetSuite's runtime module system exactly
 - **JSDoc headers** — every script documents `@NApiVersion`, `@NScriptType`, `@NModuleScope`, `@author`, `@version`
 - **try/catch on all entry points** — errors are caught, logged via `N/log`, and return `false` (fail-safe)
-- **Unit tested** — Jest tests cover happy path, boundary values, and error paths
+- **DAO pattern** — shared business logic in a dedicated module, keeping scripts thin and testable
+- **Unit tested** — Jest tests cover happy path, boundary values, edge cases, and error paths
 - **Naming conventions** — `_cs`, `_ue`, `_sl`, `_mr` suffixes identify script type at a glance
 - **Per-project isolation** — each project lives under `projects/` and is independently testable
+- **Mock layering** — root mocks are shared; project-local mocks re-export them to ensure the same instance
 
 ---
 
@@ -175,7 +221,7 @@ npm run test:ci
 1. Login to NetSuite
 2. Go to **Documents > Files > File Cabinet**
 3. Navigate to `SuiteScripts/` (or create a subfolder)
-4. Upload the `.js` file from `projects/<project>/src/scripts/`
+4. Upload `.js` files from `projects/<project>/src/`
 5. Go to **Customization > Scripting > Scripts > New**
 6. Select the uploaded file, configure Script Type and entry points
 7. Create a Script Deployment and attach to the target record/form
