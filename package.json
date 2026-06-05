@@ -1,18 +1,30 @@
 {
-  "name": "netsuite-portfolio-expensesystem",
+  "name": "netsuite-developer-portfolio",
   "version": "1.0.0",
-  "description": "",
+  "description": "NetSuite SuiteScript 2.1 portfolio — real-world ERP customizations with unit tests",
   "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
-  "scripts": {
-    "test": "jest"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "commonjs",
+  "scripts": {
+    "test": "jest",
+    "test:expense": "jest projects/expense-approval-system",
+    "test:coverage": "jest --coverage",
+    "test:coverage:expense": "jest projects/expense-approval-system --coverage",
+    "test:watch": "jest --watch",
+    "test:watch:expense": "jest projects/expense-approval-system --watch",
+    "test:verbose": "jest --verbose",
+    "test:file": "jest"
+  },
+  "keywords": [
+    "netsuite",
+    "suitescript",
+    "suitescript-2.1",
+    "netsuite-developer",
+    "portfolio",
+    "jest",
+    "unit-testing"
+  ],
+  "author": "Adi Yohanes",
+  "license": "MIT",
   "devDependencies": {
     "jest": "^30.4.2"
   }

@@ -7,7 +7,8 @@ yarn-debug.log*
 yarn-error.log*
 .npm
 .yarn-integrity
-package-lock.json
+# NOTE: package-lock.json is intentionally NOT ignored.
+# It must be committed to ensure reproducible installs across environments.
 
 # ============================================
 # Jest / Testing
