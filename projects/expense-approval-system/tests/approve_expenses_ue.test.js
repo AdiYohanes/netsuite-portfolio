@@ -1,5 +1,21 @@
 /**
- * Unit tests for approve_expenses_ue.js
+ * @file approve_expenses_ue.test.js
+ * @description Unit tests for the Expense Report User Event script.
+ *
+ * HOW THIS WORKS
+ * --------------
+ * The source script uses AMD define() — a pattern used by NetSuite's runtime.
+ * In Node.js / Jest, `define()` doesn't exist, so jest.setup.js polyfills it
+ * globally. When we require() the script below, the polyfill intercepts the
+ * define() call, resolves dependencies to their mocks, invokes the factory,
+ * and stores the returned module in `global.__ssModule`.
+ *
+ * MOCK LOCATIONS
+ * --------------
+ * mocks/N/log.js              → mock for N/log
+ * mocks/N/record.js           → mock for N/record
+ * mocks/N/runtime.js          → mock for N/runtime
+ * mocks/ExpenseApprovalDAO.js → jest.fn() stubs for the DAO module
  */
 
 const logMock = require("../mocks/N/log");

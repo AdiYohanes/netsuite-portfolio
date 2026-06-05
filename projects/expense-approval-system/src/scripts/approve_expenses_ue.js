@@ -3,13 +3,11 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  *
- * @description
- * Auto-set status Expense Report to "Pending Approval" on create.
- * Send email notification to manager.
- *
- * Entry Points:
- * - beforeSubmit: Set status & submission info
- * - afterSubmit: Send notification (after record is saved)
+ * @file approve_expenses_ue.js
+ * @description User Event script for the Expense Report record.
+ *              Automatically sets approval status on creation and notifies the manager.
+ * @author Adi Yohanes
+ * @version 1.0.0
  */
 define(["N/record", "N/log", "../modules/ExpenseApprovalDAO"], (
   record,
@@ -17,31 +15,29 @@ define(["N/record", "N/log", "../modules/ExpenseApprovalDAO"], (
   ExpenseApprovalDAO,
 ) => {
   /**
-   * beforeSubmit - Runs before record is saved to database
-   * Use this to set field values before save
+   * Runs before the record is committed to the database.
+   * Sets approval status, submission date, and submitter on CREATE only.
+   *
+   * @param {Object} context
+   * @param {string} context.type - Trigger type (create, edit, etc.)
+   * @param {Object} context.UserEventType - Enum of trigger type constants
+   * @param {Record} context.newRecord - The record being saved
    */
   const beforeSubmit = (context) => {
     try {
-      // Only run on CREATE (new expense reports)
-      if (context.type !== context.UserEventType.CREATE) {
-        return;
-      }
+      if (context.type !== context.UserEventType.CREATE) return;
 
       const newRecord = context.newRecord;
 
-      // 1. Auto-set status to Pending Approval
       newRecord.setValue({
         fieldId: "custbody_approval_status",
         value: "PENDING_APPROVAL",
       });
-
-      // 2. Set submission date
       newRecord.setValue({
         fieldId: "custbody_submission_date",
         value: new Date(),
       });
 
-      // 3. Set submitted by (current user)
       const currentUser = require("N/runtime").getCurrentUser();
       newRecord.setValue({
         fieldId: "custbody_submitted_by",
@@ -50,56 +46,45 @@ define(["N/record", "N/log", "../modules/ExpenseApprovalDAO"], (
 
       log.audit({
         title: "beforeSubmit - Status Set",
-        details: `Expense will be set to PENDING_APPROVAL`,
+        details: "Expense set to PENDING_APPROVAL",
       });
     } catch (error) {
-      log.error({
-        title: "Error in beforeSubmit",
-        details: error.message,
-      });
-      // Don't throw - let record save even if automation fails
+      log.error({ title: "Error in beforeSubmit", details: error.message });
+      // Do not throw — automation failure must not block the record save
     }
   };
 
   /**
-   * afterSubmit - Runs after record is saved to database
-   * Use this for actions that need the record ID (like sending emails)
+   * Runs after the record is committed to the database.
+   * Sends an approval notification email to the manager on CREATE only.
+   *
+   * @param {Object} context
+   * @param {string} context.type - Trigger type (create, edit, etc.)
+   * @param {Object} context.UserEventType - Enum of trigger type constants
+   * @param {Record} context.newRecord - The saved record (ID is now available)
    */
   const afterSubmit = (context) => {
     try {
-      // Only run on CREATE
-      if (context.type !== context.UserEventType.CREATE) {
-        return;
-      }
+      if (context.type !== context.UserEventType.CREATE) return;
 
       const newRecord = context.newRecord;
-      const expenseId = newRecord.id;
-      const employeeId = newRecord.getValue({ fieldId: "entityid" });
-      const amount = newRecord.getValue({ fieldId: "total" });
 
-      // Send email notification to manager
       ExpenseApprovalDAO.sendApprovalNotification({
-        employeeId: employeeId,
-        expenseId: expenseId,
-        amount: amount,
+        employeeId: newRecord.getValue({ fieldId: "entityid" }),
+        expenseId: newRecord.id,
+        amount: newRecord.getValue({ fieldId: "total" }),
         record: newRecord,
       });
 
       log.audit({
         title: "afterSubmit - Notification Sent",
-        details: `Notification sent for expense ${expenseId}`,
+        details: `Expense ID: ${newRecord.id}`,
       });
     } catch (error) {
-      log.error({
-        title: "Error in afterSubmit",
-        details: error.message,
-      });
-      // Don't throw - notification failure shouldn't affect user experience
+      log.error({ title: "Error in afterSubmit", details: error.message });
+      // Do not throw — notification failure must not affect the user experience
     }
   };
 
-  return {
-    beforeSubmit: beforeSubmit,
-    afterSubmit: afterSubmit,
-  };
+  return { beforeSubmit, afterSubmit };
 });

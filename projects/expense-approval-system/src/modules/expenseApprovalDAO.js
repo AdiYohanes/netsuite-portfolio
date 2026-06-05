@@ -2,9 +2,12 @@
  * @NApiVersion 2.1
  * @NModuleScope SameAccount
  *
- * @description
- * Data Access Object for Expense Approval business logic.
- * Centralized functions reusable across multiple scripts.
+ * @file expenseApprovalDAO.js
+ * @description Data Access Object for Expense Approval business logic.
+ *              Centralizes record operations and email notifications,
+ *              making them reusable across User Event, Suitelet, and Map/Reduce scripts.
+ * @author Adi Yohanes
+ * @version 1.0.0
  */
 define(["N/record", "N/email", "N/runtime", "N/log", "N/search"], (
   record,
@@ -14,26 +17,24 @@ define(["N/record", "N/email", "N/runtime", "N/log", "N/search"], (
   search,
 ) => {
   /**
-   * Send email notification to manager for expense approval
+   * Sends an approval notification email to the employee's supervisor.
+   * Silently skips if no supervisor or manager email is found.
    *
    * @param {Object} params
-   * @param {number} params.employeeId - Employee ID who submitted
-   * @param {number} params.expenseId - Expense Report ID
-   * @param {number} params.amount - Expense amount
-   * @param {Object} params.record - NetSuite record object
+   * @param {number} params.employeeId  - Internal ID of the submitting employee
+   * @param {number} params.expenseId   - Internal ID of the Expense Report
+   * @param {number} params.amount      - Expense total amount
+   * @param {Object} params.record      - NetSuite record object (unused, reserved for future use)
    */
   const sendApprovalNotification = (params) => {
     try {
-      const { employeeId, expenseId, amount, record: expenseRecord } = params;
+      const { employeeId, expenseId, amount } = params;
 
-      // Get employee name
       const employeeRecord = record.load({
         type: record.Type.EMPLOYEE,
         id: employeeId,
       });
       const employeeName = employeeRecord.getValue({ fieldId: "entityid" });
-
-      // Get manager (supervisor)
       const managerId = employeeRecord.getValue({ fieldId: "supervisor" });
 
       if (!managerId) {
@@ -44,7 +45,6 @@ define(["N/record", "N/email", "N/runtime", "N/log", "N/search"], (
         return;
       }
 
-      // Get manager email
       const managerRecord = record.load({
         type: record.Type.EMPLOYEE,
         id: managerId,
@@ -59,14 +59,12 @@ define(["N/record", "N/email", "N/runtime", "N/log", "N/search"], (
         return;
       }
 
-      // Format amount for display
       const formattedAmount = new Intl.NumberFormat("id-ID", {
         style: "currency",
         currency: "IDR",
         minimumFractionDigits: 0,
       }).format(amount);
 
-      // Send email
       email.send({
         author: runtime.getCurrentUser().id,
         recipients: managerEmail,
@@ -87,10 +85,8 @@ Thank you.
 
 ---
 This is an automated notification from NetSuite Expense Approval System.
-                `.trim(),
-        relatedRecords: {
-          transactionId: expenseId,
-        },
+        `.trim(),
+        relatedRecords: { transactionId: expenseId },
       });
 
       log.audit({
@@ -102,18 +98,19 @@ This is an automated notification from NetSuite Expense Approval System.
         title: "Error in sendApprovalNotification",
         details: `Employee: ${params.employeeId}, Expense: ${params.expenseId}, Error: ${error.message}`,
       });
-      // Don't throw - notification failure shouldn't block record save
+      // Do not throw — notification failure must not block the record save
     }
   };
 
   /**
-   * Process approval or rejection of expense
+   * Approves or rejects an Expense Report and notifies the employee.
+   * Throws on record load failure so the caller can handle it.
    *
    * @param {Object} params
-   * @param {number} params.expenseId - Expense Report ID
-   * @param {string} params.action - 'APPROVE' or 'REJECT'
-   * @param {string} params.notes - Approval/rejection notes
-   * @param {number} params.approverId - Approver employee ID
+   * @param {number} params.expenseId  - Internal ID of the Expense Report
+   * @param {string} params.action     - "APPROVE" or "REJECT"
+   * @param {string} params.notes      - Approver notes (optional)
+   * @param {number} params.approverId - Internal ID of the approver employee
    */
   const processApproval = (params) => {
     try {
@@ -123,28 +120,21 @@ This is an automated notification from NetSuite Expense Approval System.
         type: record.Type.EXPENSE_REPORT,
         id: expenseId,
       });
-
       const newStatus = action === "APPROVE" ? "APPROVED" : "REJECTED";
 
-      // Update status
       expenseRecord.setValue({
         fieldId: "custbody_approval_status",
         value: newStatus,
       });
-
-      // Set approval date
       expenseRecord.setValue({
         fieldId: "custbody_approval_date",
         value: new Date(),
       });
-
-      // Set approver
       expenseRecord.setValue({
         fieldId: "custbody_approved_by",
         value: approverId,
       });
 
-      // Set notes
       if (notes) {
         expenseRecord.setValue({
           fieldId: "custbody_approval_notes",
@@ -152,23 +142,17 @@ This is an automated notification from NetSuite Expense Approval System.
         });
       }
 
-      // Save record
       expenseRecord.save({
         enableSourcing: false,
         ignoreMandatoryFields: true,
       });
 
-      // Get employee info for notification
-      const employeeId = expenseRecord.getValue({ fieldId: "entityid" });
-      const amount = expenseRecord.getValue({ fieldId: "total" });
-
-      // Send notification to employee
       sendStatusNotification({
-        employeeId: employeeId,
-        expenseId: expenseId,
+        employeeId: expenseRecord.getValue({ fieldId: "entityid" }),
+        expenseId,
         status: newStatus,
-        amount: amount,
-        notes: notes,
+        amount: expenseRecord.getValue({ fieldId: "total" }),
+        notes,
       });
 
       log.audit({
@@ -180,17 +164,19 @@ This is an automated notification from NetSuite Expense Approval System.
         title: "Error in processApproval",
         details: `Expense: ${params.expenseId}, Action: ${params.action}, Error: ${error.message}`,
       });
-      throw error;
+      throw error; // Re-throw so the caller (Suitelet/MapReduce) can handle it
     }
   };
 
   /**
-   * Auto-reject expense that has been pending too long
+   * Sets an Expense Report to REJECTED_AUTO and notifies the employee.
+   * Intended for use by the Map/Reduce script to handle stale pending reports.
+   * Throws on record load failure so the caller can handle it.
    *
    * @param {Object} params
-   * @param {number} params.expenseId - Expense Report ID
-   * @param {string} params.reason - Rejection reason
-   * @param {number} params.employeeId - Employee ID
+   * @param {number} params.expenseId  - Internal ID of the Expense Report
+   * @param {string} params.reason     - Reason for auto-rejection
+   * @param {number} params.employeeId - Internal ID of the submitting employee
    */
   const autoRejectExpense = (params) => {
     try {
@@ -201,39 +187,29 @@ This is an automated notification from NetSuite Expense Approval System.
         id: expenseId,
       });
 
-      // Set status to auto-rejected
       expenseRecord.setValue({
         fieldId: "custbody_approval_status",
         value: "REJECTED_AUTO",
       });
-
-      // Set rejection reason
       expenseRecord.setValue({
         fieldId: "custbody_approval_notes",
         value: reason,
       });
-
-      // Set approval date
       expenseRecord.setValue({
         fieldId: "custbody_approval_date",
         value: new Date(),
       });
 
-      // Save record
       expenseRecord.save({
         enableSourcing: false,
         ignoreMandatoryFields: true,
       });
 
-      // Get amount for notification
-      const amount = expenseRecord.getValue({ fieldId: "total" });
-
-      // Notify employee
       sendStatusNotification({
-        employeeId: employeeId,
-        expenseId: expenseId,
+        employeeId,
+        expenseId,
         status: "REJECTED_AUTO",
-        amount: amount,
+        amount: expenseRecord.getValue({ fieldId: "total" }),
         notes: reason,
       });
 
@@ -246,25 +222,25 @@ This is an automated notification from NetSuite Expense Approval System.
         title: "Error in autoRejectExpense",
         details: `Expense: ${params.expenseId}, Error: ${error.message}`,
       });
-      throw error;
+      throw error; // Re-throw so the caller (MapReduce) can handle it
     }
   };
 
   /**
-   * Send status notification to employee
+   * Sends an approval/rejection status email to the employee.
+   * Silently skips if no employee email is found.
    *
    * @param {Object} params
-   * @param {number} params.employeeId - Employee ID
-   * @param {number} params.expenseId - Expense Report ID
-   * @param {string} params.status - New status (APPROVED, REJECTED, REJECTED_AUTO)
-   * @param {number} params.amount - Expense amount
-   * @param {string} params.notes - Approval/rejection notes
+   * @param {number} params.employeeId - Internal ID of the employee
+   * @param {number} params.expenseId  - Internal ID of the Expense Report
+   * @param {string} params.status     - New status: APPROVED | REJECTED | REJECTED_AUTO
+   * @param {number} params.amount     - Expense total amount
+   * @param {string} [params.notes]    - Approver notes (optional)
    */
   const sendStatusNotification = (params) => {
     try {
       const { employeeId, expenseId, status, amount, notes } = params;
 
-      // Get employee email
       const employeeRecord = record.load({
         type: record.Type.EMPLOYEE,
         id: employeeId,
@@ -279,28 +255,22 @@ This is an automated notification from NetSuite Expense Approval System.
         return;
       }
 
-      // Format status text
       const statusText =
         {
           APPROVED: "Approved",
           REJECTED: "Rejected",
           REJECTED_AUTO: "Auto-Rejected",
         }[status] || status;
-
-      // Format amount
       const formattedAmount = new Intl.NumberFormat("id-ID", {
         style: "currency",
         currency: "IDR",
         minimumFractionDigits: 0,
       }).format(amount);
-
-      // Determine next action message
       const nextAction =
         status === "APPROVED"
           ? "Your expense has been approved and will be processed for payment."
           : "Please review the feedback and resubmit if needed.";
 
-      // Send email
       email.send({
         author: runtime.getCurrentUser().id,
         recipients: employeeEmail,
@@ -321,10 +291,8 @@ Thank you.
 
 ---
 This is an automated notification from NetSuite Expense Approval System.
-                `.trim(),
-        relatedRecords: {
-          transactionId: expenseId,
-        },
+        `.trim(),
+        relatedRecords: { transactionId: expenseId },
       });
 
       log.audit({
@@ -336,14 +304,15 @@ This is an automated notification from NetSuite Expense Approval System.
         title: "Error in sendStatusNotification",
         details: `Employee: ${params.employeeId}, Expense: ${params.expenseId}, Error: ${error.message}`,
       });
-      // Don't throw - notification failure shouldn't block process
+      // Do not throw — notification failure must not block the approval process
     }
   };
 
   /**
-   * Get list of pending expenses for dashboard
+   * Retrieves all Expense Reports with status PENDING_APPROVAL.
+   * Returns an empty array on search failure (non-fatal).
    *
-   * @returns {Array} Array of pending expense objects
+   * @returns {Array<{id: string, employee: string, amount: string, submissionDate: string, createdDate: string}>}
    */
   const getPendingExpenses = () => {
     try {
@@ -381,7 +350,6 @@ This is an automated notification from NetSuite Expense Approval System.
     }
   };
 
-  // Public API
   return {
     sendApprovalNotification,
     processApproval,

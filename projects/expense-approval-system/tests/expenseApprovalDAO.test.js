@@ -1,5 +1,22 @@
 /**
- * Unit tests for ExpenseApprovalDAO
+ * @file expenseApprovalDAO.test.js
+ * @description Unit tests for the ExpenseApprovalDAO module.
+ *
+ * HOW THIS WORKS
+ * --------------
+ * The source module uses AMD define() — a pattern used by NetSuite's runtime.
+ * In Node.js / Jest, `define()` doesn't exist, so jest.setup.js polyfills it
+ * globally. When we require() the module below, the polyfill intercepts the
+ * define() call, resolves dependencies to their mocks, invokes the factory,
+ * and stores the returned module in `global.__ssModule`.
+ *
+ * MOCK LOCATIONS
+ * --------------
+ * mocks/N/record.js   → mock for N/record
+ * mocks/N/email.js    → mock for N/email
+ * mocks/N/runtime.js  → mock for N/runtime
+ * mocks/N/log.js      → mock for N/log
+ * mocks/N/search.js   → mock for N/search
  */
 
 // Mock dependencies
