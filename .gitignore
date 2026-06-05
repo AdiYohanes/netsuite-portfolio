@@ -61,7 +61,9 @@ $RECYCLE.BIN/
 # ============================================
 # Kiro AI
 # ============================================
-.kiro/
+# Commit steering rules and specs (useful for collaborators/portfolio reviewers)
+# but ignore settings which may contain auth tokens or account IDs
+.kiro/settings/
 
 # ============================================
 # IDE & Editors

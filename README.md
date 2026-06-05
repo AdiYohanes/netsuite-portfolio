@@ -5,11 +5,11 @@
 **SuiteScript 2.1 · Real-World ERP Customizations · Unit Tested**
 
 [![NetSuite](https://img.shields.io/badge/NetSuite-SuiteScript_2.1-0066CC?style=for-the-badge&logo=oracle&logoColor=white)](https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/chapter_4387172221.html)
-[![Jest](https://img.shields.io/badge/Jest-Unit_Tests-C21325?style=for-the-badge&logo=jest&logoColor=white)](https://jestjs.io/)
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Jest](https://img.shields.io/badge/Jest-^30.x-C21325?style=for-the-badge&logo=jest&logoColor=white)](https://jestjs.io/)
+[![Node.js](https://img.shields.io/badge/Node.js-≥18.x-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-F7DF1E?style=for-the-badge)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-Passing_✅-brightgreen?style=for-the-badge)]()
-[![Coverage](https://img.shields.io/badge/Coverage-85%25-brightgreen?style=for-the-badge)]()
+[![Tests](https://img.shields.io/badge/Tests-15_Passing_✅-brightgreen?style=for-the-badge)]()
+[![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen?style=for-the-badge)]()
 
 <br/>
 
@@ -29,10 +29,10 @@ Repository ini adalah portofolio aktif saya — setiap project dirancang untuk m
 
 ## 🗂️ Projects
 
-| #   | Project                                                        | Type                                               | Status         | Tests      |
-| --- | -------------------------------------------------------------- | -------------------------------------------------- | -------------- | ---------- |
-| 1   | [Expense Approval System](./projects/expense-approval-system/) | Client Script + User Event + Suitelet + Map/Reduce | 🔄 In Progress | ✅ Passing |
-| 2   | _(coming soon)_                                                | —                                                  | ⬜ Planned     | —          |
+| #   | Project                                                        | Script Types                                       | Status         | Tests                    |
+| --- | -------------------------------------------------------------- | -------------------------------------------------- | -------------- | ------------------------ |
+| 1   | [Expense Approval System](./projects/expense-approval-system/) | Client Script · User Event · Suitelet · Map/Reduce | 🔄 In Progress | ✅ 15 passing · 100% cov |
+| 2   | _(coming soon)_                                                | —                                                  | ⬜ Planned     | —                        |
 
 ### Project Status Legend
 
@@ -45,11 +45,11 @@ Repository ini adalah portofolio aktif saya — setiap project dirancang untuk m
 ## 🏗️ Repository Structure
 
 ```
-NetSuite-Portfolio/
+NetSuite-Portfolio-ExpenseSystem/
 │
 ├── README.md                       ← You are here (global portfolio overview)
 ├── .gitignore
-├── package.json                    ← Root devDependencies (Jest)
+├── package.json                    ← Root devDependencies (Jest ^30.x)
 ├── package-lock.json               ← Committed for reproducible installs
 ├── jest.config.js                  ← Global Jest config (covers all projects)
 ├── jest.setup.js                   ← AMD define() polyfill for Node.js/Jest
@@ -59,16 +59,14 @@ NetSuite-Portfolio/
 │       ├── log.js                  ← Mock for N/log
 │       └── ui.js                   ← Mock for N/ui/dialog
 │
-├── projects/                       ← Per-project source code
-│   └── expense-approval-system/    ← Project 1
-│       ├── README.md               ← Project-specific documentation
-│       ├── src/scripts/            ← SuiteScript source files
-│       ├── tests/                  ← Jest unit tests (mirrors src/)
-│       └── docs/screenshots/       ← Visual documentation
-│
-└── shared-modules/                 ← (Future) shared utilities across projects
-    ├── Logger.js
-    └── ErrorHandler.js
+└── projects/                       ← Per-project source code
+    └── expense-approval-system/    ← Project 1
+        ├── README.md               ← Project-specific documentation
+        ├── src/
+        │   └── scripts/            ← SuiteScript source files
+        ├── tests/                  ← Jest unit tests (mirrors src/)
+        └── docs/
+            └── screenshots/        ← Visual documentation
 ```
 
 ---
@@ -77,7 +75,7 @@ NetSuite-Portfolio/
 
 | Technology   | Version | Role                                              |
 | ------------ | ------- | ------------------------------------------------- |
-| SuiteScript  | 2.1     | NetSuite scripting API (AMD pattern)              |
+| SuiteScript  | 2.1     | NetSuite scripting API (AMD `define()` pattern)   |
 | JavaScript   | ES6+    | Arrow functions, destructuring, template literals |
 | Node.js      | ≥ 18.x  | Local runtime for test execution                  |
 | Jest         | ^30.x   | Unit testing framework                            |
@@ -89,8 +87,8 @@ NetSuite-Portfolio/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/NetSuite-Portfolio.git
-cd NetSuite-Portfolio
+git clone https://github.com/AdiYohanes/netsuite-portfolio.git
+cd NetSuite-Portfolio-ExpenseSystem
 
 # 2. Install dependencies
 npm install
@@ -114,17 +112,24 @@ PASS  projects/expense-approval-system/tests/validate_expenses_cs.test.js
     when amount is valid
       ✓ returns true for a mid-range amount
       ✓ returns true for the boundary value 0
-      ...
+      ✓ returns true for the maximum boundary (5,000,000)
+      ✓ shows no alert for a valid amount
+    when amount is non-numeric
+      ✓ treats an empty string as 0 and returns true
+      ✓ treats a text string as 0 and returns true
+      ✓ treats null as 0 and returns true
+    when a system exception is thrown
+      ✓ returns false
+      ✓ logs the error via N/log.error
+      ✓ does NOT show a dialog alert on system error
 
-Tests: 11 passed, 11 total
+Tests: 15 passed, 15 total
+Coverage: 100%
 ```
 
 ---
 
-## 🧪 Running Tests
-
-<details>
-<summary><strong>All available test commands</strong></summary>
+## 🧪 Test Commands
 
 ```bash
 # Run all tests across all projects
@@ -133,7 +138,7 @@ npm test
 # Run tests for a specific project
 npm run test:expense
 
-# Run all tests with a coverage report
+# Run all tests with coverage report
 npm run test:coverage
 
 # Run coverage for a specific project
@@ -142,98 +147,23 @@ npm run test:coverage:expense
 # Run in watch mode (re-runs on file save — great for TDD)
 npm run test:watch
 
-# Run in watch mode for a specific project
-npm run test:watch:expense
-
 # Run with verbose output (shows individual test names)
 npm run test:verbose
 
-# Run a single test file directly
-npx jest projects/expense-approval-system/tests/validate_expenses_cs.test.js
-
-# Run tests matching a name pattern
-npx jest -t "when amount is negative"
+# Run in CI mode (single pass, no failures on empty test suite)
+npm run test:ci
 ```
-
-</details>
-
-<details>
-<summary><strong>How to write a new test</strong></summary>
-
-1. Create a test file in the project's `tests/` folder, mirroring the source filename:
-   - Source: `projects/my-project/src/scripts/my_script_cs.js`
-   - Test: `projects/my-project/tests/my_script_cs.test.js`
-
-2. Use this base template:
-
-```js
-// Load mock references for assertions
-const dialogMock = require("../../../mocks/N/ui.js").dialog;
-const logMock = require("../../../mocks/N/log.js");
-
-// Require the script — this triggers the AMD define() polyfill in jest.setup.js
-require("../src/scripts/my_script_cs.js");
-const { myEntryPoint } = global.__ssModule;
-
-describe("my_script_cs — myEntryPoint()", () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it("returns true for valid input", () => {
-    // arrange
-    const context = {
-      currentRecord: { getValue: jest.fn().mockReturnValue("100") },
-    };
-    // act & assert
-    expect(myEntryPoint(context)).toBe(true);
-  });
-});
-```
-
-</details>
-
-<details>
-<summary><strong>How to add a new NetSuite module mock</strong></summary>
-
-When a new script depends on a NetSuite module that isn't mocked yet (e.g. `N/record`):
-
-**Step 1** — Create the mock file at `mocks/N/record.js`:
-
-```js
-module.exports = {
-  load: jest.fn(),
-  create: jest.fn(),
-  submitFields: jest.fn(),
-  // add whatever the script calls
-};
-```
-
-**Step 2** — Register it in `jest.config.js`:
-
-```js
-moduleNameMapper: {
-  "^N/record$": "<rootDir>/mocks/N/record.js",
-}
-```
-
-**Step 3** — Register it in `jest.setup.js`'s switch statement:
-
-```js
-case "N/record":
-  return require("./mocks/N/record.js");
-```
-
-</details>
 
 ---
 
 ## ✅ Best Practices Applied
 
 - **AMD `define()` pattern** — matches NetSuite's runtime module system exactly
-- **JSDoc headers** — every file documents `@NApiVersion`, `@NScriptType`, `@author`
-- **try/catch on all entry points** — errors are caught, logged via `N/log`, and return `false`
+- **JSDoc headers** — every script documents `@NApiVersion`, `@NScriptType`, `@NModuleScope`, `@author`, `@version`
+- **try/catch on all entry points** — errors are caught, logged via `N/log`, and return `false` (fail-safe)
 - **Unit tested** — Jest tests cover happy path, boundary values, and error paths
 - **Naming conventions** — `_cs`, `_ue`, `_sl`, `_mr` suffixes identify script type at a glance
-- **Per-project structure** — each project is isolated and independently testable
+- **Per-project isolation** — each project lives under `projects/` and is independently testable
 
 ---
 
@@ -272,11 +202,11 @@ suitecloud project:deploy
 
 ## 📬 Contact
 
-|             |                                                                        |
-| ----------- | ---------------------------------------------------------------------- |
-| 💼 LinkedIn | [linkedin.com/in/YOUR_LINKEDIN](https://linkedin.com/in/YOUR_LINKEDIN) |
-| 📧 Email    | your.email@example.com                                                 |
-| 🐙 GitHub   | [github.com/YOUR_USERNAME](https://github.com/YOUR_USERNAME)           |
+|             |                                                                                                                 |
+| ----------- | --------------------------------------------------------------------------------------------------------------- |
+| 💼 LinkedIn | [linkedin.com/in/yohanes-wicaksono-adi-807316165](https://www.linkedin.com/in/yohanes-wicaksono-adi-807316165/) |
+| 📧 Email    | adiyohanes19@gmail.com                                                                                          |
+| 🐙 GitHub   | [github.com/AdiYohanes](https://github.com/AdiYohanes)                                                          |
 
 ---
 

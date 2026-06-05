@@ -2,7 +2,6 @@
   "name": "netsuite-developer-portfolio",
   "version": "1.0.0",
   "description": "NetSuite SuiteScript 2.1 portfolio — real-world ERP customizations with unit tests",
-  "main": "index.js",
   "type": "commonjs",
   "scripts": {
     "test": "jest",
@@ -12,7 +11,7 @@
     "test:watch": "jest --watch",
     "test:watch:expense": "jest projects/expense-approval-system --watch",
     "test:verbose": "jest --verbose",
-    "test:file": "jest"
+    "test:ci": "jest --runInBand --passWithNoTests"
   },
   "keywords": [
     "netsuite",
