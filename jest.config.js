@@ -17,6 +17,8 @@ module.exports = {
     "^N/search$": "<rootDir>/mocks/N/search.js",
     "^N/runtime$": "<rootDir>/mocks/N/runtime.js",
     "^N/email$": "<rootDir>/mocks/N/email.js",
+    "^N/https$": "<rootDir>/mocks/N/https.js",
+    "^N/error$": "<rootDir>/mocks/N/error.js",
     // Map the relative AMD dep ../modules/ExpenseApprovalDAO used inside
     // approve_expenses_ue.js to the project-local mock with jest.fn() stubs
     "\\.\\./modules/ExpenseApprovalDAO$":
