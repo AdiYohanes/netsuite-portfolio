@@ -1,63 +1,64 @@
 /**
- * @file validate_expenses_cs.js
- * @description Client Script for validating the Amount field on save.
- *              Ensures the amount is within the acceptable range of 0 to 5,000,000.
- *
  * @NApiVersion 2.1
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  *
+ * @file validate_expenses_cs.js
+ * @description Validates the Amount field on the Expense Report before save.
+ *              Acceptable range: 0 – 5,000,000.
  * @author Adi Yohanes
  * @version 1.0.0
  */
 define(["N/ui/dialog", "N/log"], (dialog, log) => {
   const MAX_AMOUNT = 5000000;
 
+  // --- Helpers ---
+
+  /** Safely parse a raw field value to a number. Non-numeric defaults to 0. */
+  const parseAmount = (rawValue) => {
+    const parsed = Number(rawValue);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  /** Show a "Validation Failed" alert dialog with the given message. */
+  const showValidationAlert = (message) => {
+    dialog.alert({ title: "Validation Failed", message });
+  };
+
+  // --- Entry Point ---
+
   /**
-   * Validates that the Amount field is within the acceptable range (0 - 5,000,000)
-   * before the record is saved. Displays an alert dialog if validation fails.
+   * saveRecord — runs before the Expense Report record is saved.
+   * Returns false (and shows an alert) when validation fails.
    *
-   * @param {Object} context - The save record context object provided by NetSuite
-   * @param {Record} context.currentRecord - The current record being saved
-   * @returns {boolean} Returns true if validation passes, false to cancel the save
+   * @param {Object} context
+   * @param {Record} context.currentRecord
+   * @returns {boolean}
    */
   const saveRecord = (context) => {
     try {
-      const rawValue = context.currentRecord.getValue({ fieldId: "amount" });
-      const amount = isNaN(Number(rawValue)) ? 0 : Number(rawValue);
+      const amount = parseAmount(
+        context.currentRecord.getValue({ fieldId: "amount" }),
+      );
 
       if (amount < 0) {
-        dialog.alert({
-          title: "Validation Failed",
-          message: "Amount cannot be less than 0.",
-        });
-
+        showValidationAlert("Amount cannot be less than 0.");
         return false;
       }
 
       if (amount > MAX_AMOUNT) {
-        dialog.alert({
-          title: "Validation Failed",
-          message: `Amount cannot exceed ${MAX_AMOUNT.toLocaleString(
-            "en-US",
-          )}.`,
-        });
-
+        showValidationAlert(
+          `Amount cannot exceed ${MAX_AMOUNT.toLocaleString("en-US")}.`,
+        );
         return false;
       }
 
       return true;
     } catch (error) {
-      log.error({
-        title: "Error CS Validation",
-        details: error,
-      });
-
+      log.error({ title: "Error CS Validation", details: error });
       return false;
     }
   };
 
-  return {
-    saveRecord,
-  };
+  return { saveRecord };
 });

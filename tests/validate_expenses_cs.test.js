@@ -1,70 +1,66 @@
-// Import modul mock kita
+/**
+ * Tests for validate_expenses_cs.js
+ *
+ * The script uses AMD define(), so we require() it to trigger jest.setup.js's
+ * global polyfill, then read the exported module from global.__ssModule.
+ */
 const dialogMock = require("../mocks/N/ui.js").dialog;
 const logMock = require("../mocks/N/log.js");
 
-// Import file SuiteScript kita.
-// SuiteScript menggunakan pola AMD (define()), sehingga require() tidak langsung
-// mengembalikan module-nya. Kita perlu trigger require() terlebih dahulu agar
-// global.define di jest.setup.js dieksekusi, lalu ambil hasilnya dari global.__ssModule.
 require("../src/01_ClientScript/validate_expenses_cs.js");
-const myClientScript = global.__ssModule;
+const { saveRecord } = global.__ssModule;
 
-describe("Validate Expense Amount Value", () => {
+// Helper: build a mock context with a given amount value
+const makeContext = (amountValue) => ({
+  currentRecord: {
+    getValue: jest.fn().mockReturnValue(amountValue),
+  },
+});
+
+describe("saveRecord — Expense Amount Validation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("Error in negative value ", () => {
-    // Input
-    const mockContext = {
-      currentRecord: {
-        getValue: jest.fn().mockReturnValue("-50000"), // Simulasikan user input -50000
-      },
-    };
+  it("returns false and shows alert when amount is negative", () => {
+    const result = saveRecord(makeContext("-50000"));
 
-    // Call the Function
-    const result = myClientScript.saveRecord(mockContext);
-
-    // Result
     expect(result).toBe(false);
     expect(dialogMock.alert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Validation Failed",
-      }),
+      expect.objectContaining({ title: "Validation Failed" }),
     );
   });
 
-  it("Amount Valid ", () => {
-    // Input
-    const mockContext = {
-      currentRecord: {
-        getValue: jest.fn().mockReturnValue("1000000"),
-      },
-    };
+  it("returns false and shows alert when amount exceeds maximum", () => {
+    const result = saveRecord(makeContext("6000000"));
 
-    // Call the Function
-    const result = myClientScript.saveRecord(mockContext);
+    expect(result).toBe(false);
+    expect(dialogMock.alert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Validation Failed" }),
+    );
+  });
+
+  it("returns true and shows no alert when amount is valid", () => {
+    const result = saveRecord(makeContext("1000000"));
 
     expect(result).toBe(true);
     expect(dialogMock.alert).not.toHaveBeenCalled();
   });
-  it("HARUS MENANGKAP ERROR dan return false jika terjadi masalah sistem", () => {
-    const mockContext = {
+
+  it("returns false and logs error when a system exception is thrown", () => {
+    const errorContext = {
       currentRecord: {
-        // Simulasikan error: getValue melempar error
         getValue: jest.fn().mockImplementation(() => {
-          throw new Error("Field tidak ditemukan");
+          throw new Error("Field not found");
         }),
       },
     };
 
-    const result = myClientScript.saveRecord(mockContext);
+    const result = saveRecord(errorContext);
 
     expect(result).toBe(false);
     expect(logMock.error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Error CS Validation",
-      }),
-    ); // Memastikan error tercatat di log
+      expect.objectContaining({ title: "Error CS Validation" }),
+    );
   });
 });
