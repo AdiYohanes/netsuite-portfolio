@@ -8,7 +8,7 @@
 [![Jest](https://img.shields.io/badge/Jest-^30.x-C21325?style=for-the-badge&logo=jest&logoColor=white)](https://jestjs.io/)
 [![Node.js](https://img.shields.io/badge/Node.js-≥18.x-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-F7DF1E?style=for-the-badge)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-32_Passing_✅-brightgreen?style=for-the-badge)]()
+[![Tests](https://img.shields.io/badge/Tests-35_Passing_✅-brightgreen?style=for-the-badge)]()
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen?style=for-the-badge)]()
 
 <br/>
@@ -32,7 +32,8 @@ Repository ini adalah portofolio aktif saya — setiap project dirancang untuk m
 | #   | Project                                                        | Script Types                                       | Status         | Tests                    |
 | --- | -------------------------------------------------------------- | -------------------------------------------------- | -------------- | ------------------------ |
 | 1   | [Expense Approval System](./projects/expense-approval-system/) | Client Script · User Event · Suitelet · Map/Reduce | 🔄 In Progress | ✅ 32 passing · 100% cov |
-| 2   | _(coming soon)_                                                | —                                                  | ⬜ Planned     | —                        |
+| 2   | [Shipping API Integration](./projects/NetSuite-Shipping-API-Integration/) | User Event · Map/Reduce                            | ✅ Complete     | ✅ 3 passing · 100% cov  |
+| 3   | _(coming soon)_                                                | —                                                  | ⬜ Planned     | —                        |
 
 ### Project Status Legend
 
@@ -64,23 +65,35 @@ NetSuite-Portfolio-ExpenseSystem/
 │       └── runtime.js              ← Mock for N/runtime
 │
 └── projects/                       ← Per-project source code
-    └── expense-approval-system/    ← Project 1
+    ├── expense-approval-system/    ← Project 1
+    │   ├── README.md               ← Project-specific documentation
+    │   ├── src/
+    │   │   ├── scripts/            ← SuiteScript entry point files
+    │   │   │   ├── validate_expenses_cs.js   ← Phase 1: Client Script
+    │   │   │   └── approve_expenses_ue.js    ← Phase 2: User Event
+    │   │   └── modules/
+    │   │       └── expenseApprovalDAO.js     ← Phase 2: Shared DAO
+    │   ├── tests/                  ← Jest unit tests (mirrors src/)
+    │   │   ├── validate_expenses_cs.test.js
+    │   │   ├── approve_expenses_ue.test.js
+    │   │   └── expenseApprovalDAO.test.js
+    │   ├── mocks/                  ← Project-local mocks (re-export root mocks)
+    │   │   ├── ExpenseApprovalDAO.js         ← jest.fn() stubs for DAO
+    │   │   └── N/
+    │   └── docs/
+    │       └── screenshots/        ← Visual documentation
+    │
+    └── NetSuite-Shipping-API-Integration/ ← Project 2
         ├── README.md               ← Project-specific documentation
+        ├── server/                 ← Mock Node.js Express server
+        │   └── index.js            ← Mock shipping API endpoints
         ├── src/
-        │   ├── scripts/            ← SuiteScript entry point files
-        │   │   ├── validate_expenses_cs.js   ← Phase 1: Client Script
-        │   │   └── approve_expenses_ue.js    ← Phase 2: User Event
-        │   └── modules/
-        │       └── expenseApprovalDAO.js     ← Phase 2: Shared DAO
-        ├── tests/                  ← Jest unit tests (mirrors src/)
-        │   ├── validate_expenses_cs.test.js
-        │   ├── approve_expenses_ue.test.js
-        │   └── expenseApprovalDAO.test.js
-        ├── mocks/                  ← Project-local mocks (re-export root mocks)
-        │   ├── ExpenseApprovalDAO.js         ← jest.fn() stubs for DAO
-        │   └── N/
-        └── docs/
-            └── screenshots/        ← Visual documentation
+        │   └── scripts/            ← SuiteScript entry point files
+        │       ├── UE_PushShipmentToAPI.js   ← Push fulfillment to API
+        │       └── MR_SyncShippingStatus.js  ← Sync status from API
+        └── tests/                  ← Jest unit tests (mirrors src/)
+            └── scripts/
+                └── UE_PushShipmentToAPI.test.js
 ```
 
 ---
@@ -166,8 +179,14 @@ PASS  projects/expense-approval-system/tests/validate_expenses_cs.test.js
       ✓ logs the error via N/log.error
       ✓ does NOT show a dialog alert on system error
 
-Test Suites: 3 passed, 3 total
-Tests:       32 passed, 32 total
+PASS  projects/NetSuite-Shipping-API-Integration/tests/scripts/UE_PushShipmentToAPI.test.js
+  UE_PushShipmentToAPI
+    ✓ should skip if the event type is not CREATE or EDIT
+    ✓ should skip if tracking number already exists
+    ✓ should make an API call and update record when tracking number does not exist
+
+Test Suites: 4 passed, 4 total
+Tests:       35 passed, 35 total
 Coverage:    100%
 ```
 
