@@ -1,0 +1,99 @@
+# ============================================
+# Node.js
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+package-lock.json
+
+# ============================================
+# Jest / Testing
+# ============================================
+coverage/
+.nyc_output/
+jest_html_reporters-attach/
+
+# ============================================
+# NetSuite SDF (SuiteCloud Development Framework)
+# ============================================
+*.accountinfo
+*.properties
+suitecloud.config.js
+deploy.xml
+*.sdfclirc
+.sdf/
+sdf_output/
+
+# ============================================
+# Environment & Secrets
+# ============================================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ============================================
+# OS Files
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ============================================
+# IDE & Editors
+# ============================================
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains (WebStorm, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+
+# Vim / Emacs
+*.swp
+*.swo
+*~
+\#*\#
+.emacs.desktop
+
+# ============================================
+# Build / Distribution
+# ============================================
+dist/
+build/
+*.min.js
+*.map
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
